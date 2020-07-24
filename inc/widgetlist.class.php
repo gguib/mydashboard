@@ -68,7 +68,8 @@ class PluginMydashboardWidgetlist {
       //We add classes from mydashboard
       $widgets['mydashboard'] = [
          'PluginMydashboardInfotel',
-         'PluginMydashboardAlert'
+         'PluginMydashboardAlert',
+         'PluginMydashboardTrescal'
       ];
 
       //We add classes for GLPI core widgets

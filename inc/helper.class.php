@@ -160,7 +160,6 @@ class PluginMydashboardHelper {
       return $graph;
    }
 
-
    static function getGraphFooter($params) {
 
       $graph = "<div class='bt-row'>";
@@ -186,6 +185,7 @@ class PluginMydashboardHelper {
       if (isset($params['entities_id']) && $params['entities_id'] == "") {
          $params['entities_id'] = $_SESSION['glpiactive_entity'];
       }
+
       if (isset($params['entities_id']) && ($params['entities_id'] != -1)) {
          if (isset($params['sons']) && ($params['sons'] != "") && ($params['sons'] != 0)) {
             $entities = " AND `$table`.`entities_id` IN  (" . implode(",", getSonsOf("glpi_entities", $params['entities_id'])) . ") ";
@@ -277,16 +277,38 @@ class PluginMydashboardHelper {
          $crit['crit']['groups_id'] = self::getGroup($params['preferences']['prefered_group'],$opt,$params);
          $opt['groups_id'] = self::getGroup($params['preferences']['prefered_group'],$opt,$params);
       }
+
+      // LOCATIONS
+      $opt['multiple_locations_id'] = null;
+      $crit['crit']['multiple_locations_id'] = null;
+      if (in_array("multiple_locations_id", $criterias)) {
+
+         // Remove the '[' if exist to avoid issues
+         if(isset($params['opt']['multiple_locations_id['])){
+            $params['opt']['locations_id'] = $params['opt']['multiple_locations_id['];
+            unset($params['opt']['multiple_locations_id[']);
+         }
+
+         if (isset($params['opt']['multiple_locations_id'])) {
+            $opt['multiple_locations_id'] = is_array($params['opt']['multiple_locations_id']) ? $params['opt']['multiple_locations_id'] : [$params['opt']['multiple_locations_id']];
+            $crit['crit']['multiple_locations_id'] = " AND `glpi_tickets`.`locations_id` IN  (" . implode(",", $opt['multiple_locations_id']) . ") ";
+
+         } else {
+            $crit['crit']['multiple_locations_id'] = "";
+         }
+      }
+
       //LOCATION
       $opt['locations_id'] = 0;
-      $crit['crit']['locations_id'] = "AND 1 = 1";
+      $crit['crit']['locations_id'] = "AND 1 = 1 ";
       if (in_array("locations_id", $criterias)) {
          if (isset($params['opt']["locations_id"])
-             && $params['opt']["locations_id"] > 0) {
+            && $params['opt']["locations_id"] > 0) {
             $opt['locations_id']          = $params['opt']['locations_id'];
             $crit['crit']['locations_id'] = $params['opt']['locations_id'];
          }
       }
+
 
       //TYPE
       $opt['type']          = 0;
@@ -512,6 +534,7 @@ class PluginMydashboardHelper {
                $form .= "</br></br>";
             }
          }
+
          if (in_array("is_recursive", $criterias)) {
             $form    .= "<span class='md-widgetcrit'>";
             $form    .= __('Recursive') . "&nbsp;";
@@ -523,9 +546,9 @@ class PluginMydashboardHelper {
             if ($count > 1) {
                $form .= "</br></br>";
             }
-
          }
       }
+
       // LOCATION
       if (in_array("locations_id", $criterias)) {
          $gparams = ['name'      => 'locations_id',
@@ -542,6 +565,43 @@ class PluginMydashboardHelper {
             $form .= "</br></br>";
          }
       }
+
+
+
+      // LOCATIONS
+      if (in_array("multiple_locations_id", $criterias)){
+         $form    .= "<span class='md-widgetcrit'>";
+
+         $dbu = new DbUtils();
+         $result = $dbu->getAllDataFromTable(Location::getTable());
+
+         $temp = [];
+         foreach($result as $item){
+            $temp[$item['id']] = $item['name'];
+         }
+
+         $params = [
+            "name"=> 'multiple_locations_id',
+            "display"=>false,
+            "multiple"=>true,
+            "width"=> '200px',
+            'values'=> isset($opt['multiple_locations_id']) ? $opt['multiple_locations_id'] : [],
+            'display_emptychoice' => true
+         ];
+
+         $form   .= _n('Location', 'Locations', 2);
+         $form   .= "&nbsp;";
+
+         $dropdown = Dropdown::showFromArray("multiple_locations_id", $temp, $params);
+
+         $form .= $dropdown;
+
+         $form   .= "</span>";
+         if ($count > 1) {
+            $form .= "</br></br>";
+         }
+      }
+
       // REQUESTER GROUPS
       if (in_array("requester_groups_id", $criterias)){
          $form    .= "<span class='md-widgetcrit'>";
